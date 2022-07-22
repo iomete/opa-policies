@@ -1,7 +1,5 @@
 package iomete
 
-import future.keywords
-
 action_hierarchy := {
     "lakehouse": {
         "create": ["create"],
@@ -46,7 +44,7 @@ action_hierarchy := {
 }
 
  # logic that implements RBAC.
- allow contains name if {
+ allow[name] {
      # load account data
      account := data.accounts[input.account]
 
@@ -88,7 +86,7 @@ action_hierarchy := {
  }
 
 # logic that implements ABAC (OWNERSHIP rule).
-allow contains name if {
+allow[name] {
     # iterate over input resource names
     input_resource := input.resources[_]
     # check if there is ownership relationship between the input resource owner and the user
