@@ -1,0 +1,10 @@
+{
+    "account": "000000000000",
+    "user": "vusal",
+    "service": "lakehouse",
+    "action": "create",
+    "resources": [
+        {"name": "resource1", "owner": "abc"},
+        {"name": "resource2", "owner": "abc"}
+    ]
+}
