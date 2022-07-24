@@ -44,45 +44,42 @@ action_hierarchy := {
 }
 
  # logic that implements RBAC.
- allow[name] {
-     # load account data
-     account := data.accounts[input.account]
+allow[name] {
+    # load account data
+    account := data.accounts[input.user.account]
 
-     # load account roles based on user's roles
-     roles := account.users[input.user].roles
+    # iterate over user's roles
+    user_role := input.user.roles[_]
 
-     # iterate over roles
-     r := roles[_]
+    # get role's permissions
+    permissions := account.role_permissions[user_role]
 
-     # get role's permissions
-     permissions := account.role_permissions[r]
+    # iterate over role's permissions
+    p := permissions[_]
 
-     # iterate over role's permissions
-     p := permissions[_]
+    # check if the input service mathces the permission's service
+    p.service == input.service
 
-     # check if the input service mathces the permission's service
-     p.service == input.service
+    # if service mathc, iterate over the actions
+    action := p.actions[_]
 
-     # if service mathc, iterate over the actions
-     action := p.actions[_]
+    # check if the action mathc the input action
+    # here we can get input.action = "connect",
+    # in that case we need to check if permission has "connect" or "manage" based on action hierarchy
+    actions_cover_input_action := action_hierarchy[input.service][input.action]
 
-     # check if the action mathc the input action
-     # here we can get input.action = "connect",
-     # in that case we need to check if permission has "connect" or "manage" based on action hierarchy
-     actions_cover_input_action := action_hierarchy[input.service][input.action]
+    action.action == actions_cover_input_action[_]
 
-     action.action == actions_cover_input_action[_]
+    # iterate over input resource names
+    input_resource := input.resources[_]
 
-     # iterate over input resource names
-     input_resource := input.resources[_]
+    # iterate over the permission's resources
+    action_resource_glob := action.resources[_]
 
-     # iterate over the permission's resources
-     action_resource_glob := action.resources[_]
+    # check if the input resource mathc the action resource glob
+    glob.match(action_resource_glob, [], input_resource.name)
 
-     # check if the input resource mathc the action resource glob
-     glob.match(action_resource_glob, [], input_resource.name)
-
-     name := input_resource.name
+    name := input_resource.name
  }
 
 # logic that implements ABAC (OWNERSHIP rule).
@@ -90,7 +87,7 @@ allow[name] {
     # iterate over input resource names
     input_resource := input.resources[_]
     # check if there is ownership relationship between the input resource owner and the user
-    input_resource.owner == input.user
+    input_resource.owner == input.user.id
 
     # if the user is the owner of the given resource, then can check if the requested action is allowed for the ownership relationship
 
