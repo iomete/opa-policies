@@ -25,6 +25,12 @@ action_hierarchy := {
         "view": ["view", "manage"],
         "owner": ["view", "manage"]
     },
+    "iam-role": {
+        "create": ["create"],
+        "manage": ["manage"],
+        "view": ["view", "manage"],
+        "owner": ["view", "manage"]
+    },
     "storage-integration": {
         "create": ["create"],
         "manage": ["manage"],
