@@ -4,8 +4,8 @@ action_hierarchy := {
     "lakehouse": {
         "create": ["create"],
         "manage": ["manage"],
-        "connect": ["connect", "manage"],
-        "owner": ["connect", "manage"]
+        "view": ["view", "manage"],
+        "owner": ["view", "manage"]
     },
     "spark-job": {
         "create": ["create"],
