@@ -148,7 +148,7 @@ detail_resource_permissions :=result {
     }
 }
 
-default detail_resource_manage_permission := false
+default detail_resource_manage_permission = false
 
 detail_resource_manage_permission {
     account := data.accounts[input.user.account]
