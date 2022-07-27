@@ -116,7 +116,7 @@ module_permissions :=result {
     }
 }
 
-matching_rules(test_action) := result {
+matching_rules(test_action) = result {
     result := { user_role: resources |
 
         user_role := input.user.roles[i]
