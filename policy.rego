@@ -108,3 +108,33 @@ allow[name] {
 
     name := input_resource.name
 }
+
+module_permissions :=result {
+    result := {
+        "create": matching_rules("create"),
+        "manage": matching_rules("manage")
+    }
+}
+
+matching_rules(test_action) := result {
+    result := { user_role: resources |
+
+        user_role := input.user.roles[i]
+
+        # get role's permissions
+        permissions := data.accounts[input.user.account].role_permissions[user_role]
+
+        # iterate over role's permissions
+        p := permissions[_]
+
+        # check if the input service mathces the permission's service
+        p.service == input.service
+
+        # if service mathc, iterate over the actions
+        action := p.actions[_]
+
+        action.action == test_action
+
+        resources := action.resources
+    }
+}
