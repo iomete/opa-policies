@@ -58,7 +58,7 @@ allow[name] {
     account := data.accounts[input.user.account]
 
     # iterate over user's roles
-    user_role := input.user.roles[_]
+    user_role := account.users[input.user.id].roles[_]
 
     # get role's permissions
     permissions := account.role_permissions[user_role]
@@ -119,10 +119,12 @@ module_permissions :=result {
 matching_rules(test_action) = result {
     result := { user_role: resources |
 
-        user_role := input.user.roles[i]
+        account := data.accounts[input.user.account]
+
+        user_role := account.users[input.user.id].roles[i]
 
         # get role's permissions
-        permissions := data.accounts[input.user.account].role_permissions[user_role]
+        permissions := account.role_permissions[user_role]
 
         # iterate over role's permissions
         p := permissions[_]
