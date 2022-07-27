@@ -140,3 +140,53 @@ matching_rules(test_action) = result {
         resources := action.resources
     }
 }
+
+detail_resource_permissions :=result {
+    result := {
+        "create": matching_rules("create"),
+        "manage": matching_rules("manage")
+    }
+}
+
+default detail_resource_manage_permission := false
+
+detail_resource_manage_permission {
+    account := data.accounts[input.user.account]
+
+    user_role := account.users[input.user.id].roles[i]
+
+    # get role's permissions
+    permissions := account.role_permissions[user_role]
+
+    # iterate over role's permissions
+    p := permissions[_]
+
+    # check if the input service mathces the permission's service
+    p.service == input.service
+
+    # if service mathc, iterate over the actions
+    action := p.actions[_]
+
+    action.action == "manage"
+
+    resources := action.resources
+
+    # iterate over the permission's resources
+    action_resource_glob := action.resources[_]
+
+    # check if the input resource mathc the action resource glob
+    glob.match(action_resource_glob, [], input.resource.name)
+}
+
+detail_resource_manage_permission {
+    # check if there is ownership relationship between the input resource owner and the user
+    input.resource.owner == input.user.id
+
+    # if the user is the owner of the given resource, then can check if the requested action is allowed for the ownership relationship
+
+    # let's get the acttions that cover owner action. e.g. "connect" or "manage"
+    actions_cover_owner_action := action_hierarchy[input.service]["owner"]
+
+    # check if the requested action match the owner covered actions (e.g. "connect" or "manage")
+    "manage" == actions_cover_owner_action[_]
+}
