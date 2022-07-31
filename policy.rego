@@ -52,6 +52,18 @@ action_hierarchy := {
     }
 }
 
+# logic that implements root user
+allow[name] {
+    account := data.accounts[input.user.account]
+
+    account.users[input.user.id].root_user == "true"
+
+    # iterate over input resource names
+    input_resource := input.resources[_]
+
+    name := input_resource.name
+}
+
  # logic that implements RBAC.
 allow[name] {
     # load account data
@@ -109,7 +121,21 @@ allow[name] {
     name := input_resource.name
 }
 
-module_permissions :=result {
+# root user implementation
+module_permissions[result] {
+    account := data.accounts[input.user.account]
+    account.users[input.user.id].root_user == "true"
+
+    result := {
+        "create": { "all_roles": ["*"] },
+        "manage": { "all_roles": ["*"] }
+    }
+}
+
+# non-root user implementation
+module_permissions[result] {
+    account := data.accounts[input.user.account]
+    not account.users[input.user.id].root_user == "true"
     result := {
         "create": matching_rules("create"),
         "manage": matching_rules("manage")
@@ -118,7 +144,6 @@ module_permissions :=result {
 
 matching_rules(test_action) = result {
     result := { user_role: resources |
-
         account := data.accounts[input.user.account]
 
         user_role := account.users[input.user.id].roles[i]
@@ -141,14 +166,13 @@ matching_rules(test_action) = result {
     }
 }
 
-detail_resource_permissions :=result {
-    result := {
-        "create": matching_rules("create"),
-        "manage": matching_rules("manage")
-    }
-}
-
 default detail_resource_manage_permission = false
+
+# root user implementation
+detail_resource_manage_permission {
+    account := data.accounts[input.user.account]
+    account.users[input.user.id].root_user == "true"
+}
 
 detail_resource_manage_permission {
     account := data.accounts[input.user.account]
