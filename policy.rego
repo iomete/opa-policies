@@ -56,7 +56,7 @@ action_hierarchy := {
 allow[name] {
     account := data.accounts[input.user.account]
 
-    account.users[input.user.id].root_user == "true"
+    account.users[input.user.id].root_user == true
 
     # iterate over input resource names
     input_resource := input.resources[_]
@@ -124,7 +124,7 @@ allow[name] {
 # root user implementation
 module_permissions[result] {
     account := data.accounts[input.user.account]
-    account.users[input.user.id].root_user == "true"
+    account.users[input.user.id].root_user == true
 
     result := {
         "create": { "all_roles": ["*"] },
@@ -135,7 +135,7 @@ module_permissions[result] {
 # non-root user implementation
 module_permissions[result] {
     account := data.accounts[input.user.account]
-    not account.users[input.user.id].root_user == "true"
+    not account.users[input.user.id].root_user == true
     result := {
         "create": matching_rules("create"),
         "manage": matching_rules("manage")
@@ -171,7 +171,7 @@ default detail_resource_manage_permission = false
 # root user implementation
 detail_resource_manage_permission {
     account := data.accounts[input.user.account]
-    account.users[input.user.id].root_user == "true"
+    account.users[input.user.id].root_user == true
 }
 
 detail_resource_manage_permission {
