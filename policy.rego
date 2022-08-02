@@ -85,8 +85,8 @@ allow[name] {
     action := p.actions[_]
 
     # check if the action mathc the input action
-    # here we can get input.action = "connect",
-    # in that case we need to check if permission has "connect" or "manage" based on action hierarchy
+    # here we can get input.action = "view",
+    # in that case we need to check if permission has "view" or "manage" based on action hierarchy
     actions_cover_input_action := action_hierarchy[input.service][input.action]
 
     action.action == actions_cover_input_action[_]
@@ -97,11 +97,13 @@ allow[name] {
     # iterate over the permission's resources
     action_resource_glob := action.resources[_]
 
+    not is_system_role_create_or_manage(input.service, input.action, input_resource.name)
+
     # check if the input resource mathc the action resource glob
     glob.match(action_resource_glob, [], input_resource.name)
 
     name := input_resource.name
- }
+}
 
 # logic that implements ABAC (OWNERSHIP rule).
 allow[name] {
@@ -157,60 +159,21 @@ matching_rules(test_action) = result {
         # check if the input service mathces the permission's service
         p.service == input.service
 
-        # if service mathc, iterate over the actions
+        # if service match, iterate over the actions
         action := p.actions[_]
 
         action.action == test_action
 
-        resources := action.resources
+        resources := [name |
+            some i
+            not is_system_role_create_or_manage(input.service, test_action, action.resources[i])
+            name := action.resources[i]
+        ]
     }
 }
 
-default detail_resource_manage_permission = false
-
-# root user implementation
-detail_resource_manage_permission {
-    account := data.accounts[input.user.account]
-    account.users[input.user.id].root_user == true
-}
-
-detail_resource_manage_permission {
-    account := data.accounts[input.user.account]
-
-    user_role := account.users[input.user.id].roles[i]
-
-    # get role's permissions
-    permissions := account.role_permissions[user_role]
-
-    # iterate over role's permissions
-    p := permissions[_]
-
-    # check if the input service mathces the permission's service
-    p.service == input.service
-
-    # if service mathc, iterate over the actions
-    action := p.actions[_]
-
-    action.action == "manage"
-
-    resources := action.resources
-
-    # iterate over the permission's resources
-    action_resource_glob := action.resources[_]
-
-    # check if the input resource mathc the action resource glob
-    glob.match(action_resource_glob, [], input.resource.name)
-}
-
-detail_resource_manage_permission {
-    # check if there is ownership relationship between the input resource owner and the user
-    input.resource.owner == input.user.id
-
-    # if the user is the owner of the given resource, then can check if the requested action is allowed for the ownership relationship
-
-    # let's get the acttions that cover owner action. e.g. "connect" or "manage"
-    actions_cover_owner_action := action_hierarchy[input.service]["owner"]
-
-    # check if the requested action match the owner covered actions (e.g. "connect" or "manage")
-    "manage" == actions_cover_owner_action[_]
+is_system_role_create_or_manage(service, action, resource_name) {
+    service == "iam-role"
+    action == ["create", "manage"][_]
+    glob.match("system:*", [], resource_name)
 }
