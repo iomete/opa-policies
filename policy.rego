@@ -61,6 +61,8 @@ allow[name] {
     # iterate over input resource names
     input_resource := input.resources[_]
 
+    not is_system_role_create_or_manage(input.service, input.action, input_resource.name)
+
     name := input_resource.name
 }
 
