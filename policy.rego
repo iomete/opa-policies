@@ -45,12 +45,6 @@ action_hierarchy := {
         "view":  ["view", "attach", "manage"],
         "owner": ["view", "attach", "manage"]
     },
-	"iam-role": {
-		"create": ["create"],
-		"manage": ["manage"],
-		"view": ["view", "manage"],
-		"owner": ["view", "manage"],
-	},
 	"app-bi": {"use": ["use"]},
 	"billing": {
 		"manage": ["manage"],
