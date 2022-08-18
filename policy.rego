@@ -31,6 +31,12 @@ action_hierarchy := {
 		"view": ["view", "manage"],
 		"owner": ["view", "manage"],
 	},
+    "iam-user": {
+        "create": ["create"],
+        "manage": ["manage"],
+        "view": ["view", "manage"],
+        "owner": ["view", "manage"]
+    },
     "iam-group": {
         "create": ["create"],
         "manage": ["manage"],
