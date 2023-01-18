@@ -1,16 +1,16 @@
 package iomete
 
 action_hierarchy := {
-	"lakehouse": {
-		"create": ["create"],
-		"manage": ["manage"],
-		"view": ["view", "manage"],
+    "lakehouse": {
+        "create": ["create"],
+        "manage": ["manage"],
+        "view": ["view", "manage"],
 		"owner": ["view", "manage"],
-	},
-	"spark-job": {
-		"create": ["create"],
-		"manage": ["manage"],
-		"view": ["view", "manage"],
+    },
+    "spark-job": {
+        "create": ["create"],
+        "manage": ["manage"],
+        "view": ["view", "manage"],
 		"owner": ["view", "manage"],
 	},
 	"storage-integration": {
@@ -30,7 +30,7 @@ action_hierarchy := {
 		"manage": ["manage"],
 		"view": ["view", "manage"],
 		"owner": ["view", "manage"],
-	},
+    },
     "iam-user": {
         "create": ["create"],
         "manage": ["manage"],
@@ -51,138 +51,157 @@ action_hierarchy := {
         "view":  ["view", "attach", "manage"],
         "owner": ["view", "attach", "manage"]
     },
-	"app-bi": {"use": ["use"]},
-	"billing": {
-		"manage": ["manage"],
+    "data-acl": {
+        "create": ["create"],
+        "manage": ["manage"],
+        "view": ["view", "manage"],
+        "owner": ["view", "manage"],
+    },
+    "storage-integration": {
+        "create": ["create"],
+        "manage": ["manage"],
+        "view": ["view", "manage"],
+        "owner": ["view", "manage"]
+    },
+    "ssh-tunnel": {
+        "create": ["create"],
+        "manage": ["manage"],
+        "view": ["view", "manage"],
+        "owner": ["view", "manage"]
+    },
+    "app-bi": {
+        "use": ["use"]
+    },
+    "billing": {
+        "manage": ["manage"],
 		"monitor": ["monitor", "manage"],
 	},
 }
 
 # logic that implements root user
 allow[name] {
-	account := data.accounts[input.user.account]
+    workspace := data.workspaces[input.user.workspaceId]
 
-	account.users[input.user.id].root_user == true
+    workspace.users[input.user.id].root_user == true
 
-	# iterate over input resource names
-	input_resource := input.resources[_]
+    # iterate over input resource names
+    input_resource := input.resources[_]
 
-	not is_system_role_create_or_manage(input.service, input.action, input_resource.name)
+    not is_system_role_create_or_manage(input.service, input.action, input_resource.name)
 
-	name := input_resource.name
+    name := input_resource.name
 }
 
-# logic that implements RBAC.
+ # logic that implements RBAC.
 allow[name] {
-	# load account data
-	account := data.accounts[input.user.account]
+    # load workspace data
+    workspace := data.workspaces[input.user.workspaceId]
 
-	# iterate over user's roles
-	user_role := account.users[input.user.id].roles[_]
+    # iterate over user's roles
+    user_role := workspace.users[input.user.id].roles[_]
 
-	# get role's permissions
-	permissions := account.role_permissions[user_role]
+    # get role's permissions
+    permissions := workspace.role_permissions[user_role]
 
-	# iterate over role's permissions
-	p := permissions[_]
+    # iterate over role's permissions
+    p := permissions[_]
 
-	# check if the input service mathces the permission's service
-	p.service == input.service
+    # check if the input service mathces the permission's service
+    p.service == input.service
 
-	# if service mathc, iterate over the actions
-	action := p.actions[_]
+    # if service mathc, iterate over the actions
+    action := p.actions[_]
 
-	# check if the action mathc the input action
-	# here we can get input.action = "view",
-	# in that case we need to check if permission has "view" or "manage" based on action hierarchy
-	actions_cover_input_action := action_hierarchy[input.service][input.action]
+    # check if the action mathc the input action
+    # here we can get input.action = "view",
+    # in that case we need to check if permission has "view" or "manage" based on action hierarchy
+    actions_cover_input_action := action_hierarchy[input.service][input.action]
 
-	action.action == actions_cover_input_action[_]
+    action.action == actions_cover_input_action[_]
 
-	# iterate over input resource names
-	input_resource := input.resources[_]
+    # iterate over input resource names
+    input_resource := input.resources[_]
 
-	# iterate over the permission's resources
-	action_resource_glob := action.resources[_]
+    # iterate over the permission's resources
+    action_resource_glob := action.resources[_]
 
-	not is_system_role_create_or_manage(input.service, input.action, input_resource.name)
+    not is_system_role_create_or_manage(input.service, input.action, input_resource.name)
 
-	# check if the input resource mathc the action resource glob
-	glob.match(action_resource_glob, [], input_resource.name)
+    # check if the input resource mathc the action resource glob
+    glob.match(action_resource_glob, [], input_resource.name)
 
-	name := input_resource.name
+    name := input_resource.name
 }
 
 # logic that implements ABAC (OWNERSHIP rule).
 allow[name] {
-	# iterate over input resource names
-	input_resource := input.resources[_]
+    # iterate over input resource names
+    input_resource := input.resources[_]
+    # check if there is ownership relationship between the input resource owner and the user
+    input_resource.owner == input.user.id
 
-	# check if there is ownership relationship between the input resource owner and the user
-	input_resource.owner == input.user.id
+    # if the user is the owner of the given resource, then can check if the requested action is allowed for the ownership relationship
 
-	# if the user is the owner of the given resource, then can check if the requested action is allowed for the ownership relationship
+    # let's get the acttions that cover owner action. e.g. "connect" or "manage"
+    actions_cover_owner_action := action_hierarchy[input.service]["owner"]
 
-	# let's get the acttions that cover owner action. e.g. "connect" or "manage"
-	actions_cover_owner_action := action_hierarchy[input.service].owner
+    # check if the requested action match the owner covered actions (e.g. "connect" or "manage")
+    input.action == actions_cover_owner_action[_]
 
-	# check if the requested action match the owner covered actions (e.g. "connect" or "manage")
-	input.action == actions_cover_owner_action[_]
-
-	name := input_resource.name
+    name := input_resource.name
 }
 
 # root user implementation
 module_permissions[result] {
-	account := data.accounts[input.user.account]
-	account.users[input.user.id].root_user == true
+    workspace := data.workspaces[input.user.workspaceId]
+    workspace.users[input.user.id].root_user == true
 
-	result := {
-		"create": {"all_roles": ["*"]},
-		"manage": {"all_roles": ["*"]},
-	}
+    result := {
+        "create": { "all_roles": ["*"] },
+        "manage": { "all_roles": ["*"] }
+    }
 }
 
 # non-root user implementation
 module_permissions[result] {
-	account := data.accounts[input.user.account]
-	not account.users[input.user.id].root_user == true
-	result := {
-		"create": matching_rules("create"),
-		"manage": matching_rules("manage"),
-	}
+    workspace := data.workspaces[input.user.workspaceId]
+    not workspace.users[input.user.id].root_user == true
+    result := {
+        "create": matching_rules("create"),
+        "manage": matching_rules("manage")
+    }
 }
 
 matching_rules(test_action) = result {
-	result := {user_role: resources |
-		account := data.accounts[input.user.account]
+    result := { user_role: resources |
+        workspace := data.workspaces[input.user.workspaceId]
 
-		user_role := account.users[input.user.id].roles[i]
+        user_role := workspace.users[input.user.id].roles[i]
 
-		# get role's permissions
-		permissions := account.role_permissions[user_role]
+        # get role's permissions
+        permissions := workspace.role_permissions[user_role]
 
-		# iterate over role's permissions
-		p := permissions[_]
+        # iterate over role's permissions
+        p := permissions[_]
 
-		# check if the input service mathces the permission's service
-		p.service == input.service
+        # check if the input service mathces the permission's service
+        p.service == input.service
 
-		# if service match, iterate over the actions
-		action := p.actions[_]
+        # if service match, iterate over the actions
+        action := p.actions[_]
 
-		action.action == test_action
+        action.action == test_action
 
-		resources := [name |
-			some i
-			not is_system_role_create_or_manage(input.service, test_action, action.resources[i])
-			name := action.resources[i]
-		]
-	}
+        resources := [name |
+            some i
+            not is_system_role_create_or_manage(input.service, test_action, action.resources[i])
+            name := action.resources[i]
+        ]
+    }
 }
 
 is_system_role_create_or_manage(service, action, resource_name) {
-	service == "iam-role"
-	action == ["create", "manage"][_]
-	glob.match("system:*", [], resource_name)
+    service == "iam-role"
+    action == ["create", "manage"][_]
+    glob.match("system:*", [], resource_name)
 }
