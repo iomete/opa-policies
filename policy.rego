@@ -1,5 +1,20 @@
 package iomete
 
+# Resource IDs
+
+# lakehouse: name
+# spark-job: name
+
+# storage-integration: name
+# ssh-tunnel: name
+
+# iam-user: name
+# iam-group: path?
+# iam-role: name
+
+# data-acl: none
+# billing: none
+
 action_hierarchy := {
     "lakehouse": {
         "create": ["create"],
@@ -34,8 +49,9 @@ action_hierarchy := {
     "iam-user": {
         "create": ["create"],
         "manage": ["manage"],
-        "view": ["view", "manage"],
-        "owner": ["view", "manage"]
+        "attach": ["attach", "manage"],
+        "view": ["view", "attach", "manage"],
+        "owner": ["view", "attach", "manage"]
     },
     "iam-group": {
         "create": ["create"],
@@ -48,26 +64,8 @@ action_hierarchy := {
         "create": ["create"],
         "manage": ["manage"],
         "attach": ["attach", "manage"],
-        "view":  ["view", "attach", "manage"],
+        "view": ["view", "attach", "manage"],
         "owner": ["view", "attach", "manage"]
-    },
-    "data-acl": {
-        "create": ["create"],
-        "manage": ["manage"],
-        "view": ["view", "manage"],
-        "owner": ["view", "manage"],
-    },
-    "storage-integration": {
-        "create": ["create"],
-        "manage": ["manage"],
-        "view": ["view", "manage"],
-        "owner": ["view", "manage"]
-    },
-    "ssh-tunnel": {
-        "create": ["create"],
-        "manage": ["manage"],
-        "view": ["view", "manage"],
-        "owner": ["view", "manage"]
     },
     "app-bi": {
         "use": ["use"]
