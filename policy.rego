@@ -75,9 +75,9 @@ action_hierarchy := {
 
 # logic that implements root user
 allow[name] {
-    data_plane := data.data_planes[input.user.dataPlaneId]
+    workspace := data.workspaces[input.user.workspaceId]
 
-    data_plane.users[input.user.id].root_user == true
+    workspace.users[input.user.id].root_user == true
 
     # iterate over input resource names
     input_resource := input.resources[_]
@@ -89,14 +89,14 @@ allow[name] {
 
  # logic that implements RBAC.
 allow[name] {
-    # load data_plane data
-    data_plane := data.data_planes[input.user.dataPlaneId]
+    # load workspace data
+    workspace := data.workspaces[input.user.workspaceId]
 
     # iterate over user's roles
-    user_role := data_plane.users[input.user.id].roles[_]
+    user_role := workspace.users[input.user.id].roles[_]
 
     # get role's permissions
-    permissions := data_plane.role_permissions[user_role]
+    permissions := workspace.role_permissions[user_role]
 
     # iterate over role's permissions
     p := permissions[_]
@@ -148,8 +148,8 @@ allow[name] {
 
 # root user implementation
 module_permissions[result] {
-    data_plane := data.data_planes[input.user.dataPlaneId]
-    data_plane.users[input.user.id].root_user == true
+    workspace := data.workspaces[input.user.workspaceId]
+    workspace.users[input.user.id].root_user == true
 
     result := {
         "create": { "all_roles": ["*"] },
@@ -159,8 +159,8 @@ module_permissions[result] {
 
 # non-root user implementation
 module_permissions[result] {
-    data_plane := data.data_planes[input.user.dataPlaneId]
-    not data_plane.users[input.user.id].root_user == true
+    workspace := data.workspaces[input.user.workspaceId]
+    not workspace.users[input.user.id].root_user == true
     result := {
         "create": matching_rules("create"),
         "manage": matching_rules("manage")
@@ -169,12 +169,12 @@ module_permissions[result] {
 
 matching_rules(test_action) = result {
     result := { user_role: resources |
-        data_plane := data.data_planes[input.user.dataPlaneId]
+        workspace := data.workspaces[input.user.workspaceId]
 
-        user_role := data_plane.users[input.user.id].roles[i]
+        user_role := workspace.users[input.user.id].roles[i]
 
         # get role's permissions
-        permissions := data_plane.role_permissions[user_role]
+        permissions := workspace.role_permissions[user_role]
 
         # iterate over role's permissions
         p := permissions[_]
