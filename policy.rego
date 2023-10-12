@@ -75,7 +75,7 @@ action_hierarchy := {
 
 # logic that implements root user
 allow[name] {
-    data_plane := data.data_planes[input.user.dataPlaneId]
+    data_plane := data.data_plane
 
     data_plane.users[input.user.id].root_user == true
 
@@ -90,7 +90,7 @@ allow[name] {
  # logic that implements RBAC.
 allow[name] {
     # load data_plane data
-    data_plane := data.data_planes[input.user.dataPlaneId]
+    data_plane := data.data_plane
 
     # iterate over user's roles
     user_role := data_plane.users[input.user.id].roles[_]
@@ -148,7 +148,7 @@ allow[name] {
 
 # root user implementation
 module_permissions[result] {
-    data_plane := data.data_planes[input.user.dataPlaneId]
+    data_plane := data.data_plane
     data_plane.users[input.user.id].root_user == true
 
     result := {
@@ -159,7 +159,7 @@ module_permissions[result] {
 
 # non-root user implementation
 module_permissions[result] {
-    data_plane := data.data_planes[input.user.dataPlaneId]
+    data_plane := data.data_plane
     not data_plane.users[input.user.id].root_user == true
     result := {
         "create": matching_rules("create"),
@@ -169,7 +169,7 @@ module_permissions[result] {
 
 matching_rules(test_action) = result {
     result := { user_role: resources |
-        data_plane := data.data_planes[input.user.dataPlaneId]
+        data_plane := data.data_plane
 
         user_role := data_plane.users[input.user.id].roles[i]
 
