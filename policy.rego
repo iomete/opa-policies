@@ -22,6 +22,12 @@ action_hierarchy := {
         "view": ["view", "manage"],
 		"owner": ["view", "manage"],
     },
+    "connect-cluster": {
+        "create": ["create"],
+        "manage": ["manage"],
+        "view": ["view", "manage"],
+		"owner": ["view", "manage"],
+    },
     "spark-job": {
         "create": ["create"],
         "manage": ["manage"],
