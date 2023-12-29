@@ -28,7 +28,7 @@ allow[name] {
     # iterate over role's permissions
     p := permissions[_]
 
-    # check if the input service mathces the permission's service
+    # check if the input service matches the permission's service
     p.service == input.service
 
     # if service match, iterate over the actions
@@ -44,7 +44,8 @@ allow[name] {
 
     not is_system_role_create_or_manage(input.service, input.action, input_resource.name)
 
-    # check if the input resource match the action resource glob
+    # Allow empty resource name for specific actions like List and Create
+    is_empty_resource_name_allowed(action.action, input_resource.name) or
     glob.match(action_resource_glob, [], input_resource.name)
 
     name := input_resource.name
@@ -104,4 +105,11 @@ is_system_role_create_or_manage(service, action, resource_name) {
     service == "iam_role"
     action == ["create", "manage"][_]
     glob.match("system:*", [], resource_name)
+}
+
+# Helper function to determine if empty resource names are allowed for specific actions
+is_empty_resource_name_allowed(action, resource_name) {
+    resource_name == ""
+    allowed_empty_resource_actions := {"List", "Create"}
+    action in allowed_empty_resource_actions
 }
