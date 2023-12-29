@@ -1,17 +1,5 @@
 package iomete
 
-# logic that implements root user
-allow[name] {
-    data_plane := data.data_plane
-
-    data_plane.users[input.user.id].root_user == true
-
-    # iterate over input resource names
-    input_resource := input.resources[_]
-
-    name := input_resource.name
-}
-
 # logic that implements RBAC.
 allow[name] {
     # load data_plane data
@@ -45,50 +33,18 @@ allow[name] {
     name := input_resource.name
 }
 
-# root user implementation
-module_permissions[result] {
+user_permissions = [service |
     data_plane := data.data_plane
-    data_plane.users[input.user.id].root_user == true
+    user_role := data_plane.users[input.user.id].roles[_]
 
-    result := {
-        "create": { "all_roles": ["*"] },
-        "manage": { "all_roles": ["*"] }
+    # get role's permissions
+    permissions := data_plane.role_permissions[user_role]
+
+    # iterate over role's permissions
+    p := permissions[_]
+
+    # if service match, get the action name
+    service := {
+        p.service: [action | action := p.actions[_].action]
     }
-}
-
-# non-root user implementation
-module_permissions[result] {
-    data_plane := data.data_plane
-    not data_plane.users[input.user.id].root_user == true
-    result := {
-        "create": matching_rules("create"),
-        "manage": matching_rules("manage")
-    }
-}
-
-matching_rules(test_action) = result {
-    result := { user_role: resources |
-        data_plane := data.data_plane
-
-        user_role := data_plane.users[input.user.id].roles[i]
-
-        # get role's permissions
-        permissions := data_plane.role_permissions[user_role]
-
-        # iterate over role's permissions
-        p := permissions[_]
-
-        # check if the input service mathces the permission's service
-        p.service == input.service
-
-        # if service match, iterate over the actions
-        action := p.actions[_]
-
-        action.action == test_action
-
-        resources := [name |
-            some i
-            name := action.resources[i]
-        ]
-    }
-}
+]
