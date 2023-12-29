@@ -146,5 +146,6 @@ is_system_role_create_or_manage(service, action, resource_name) {
 is_empty_resource_name_allowed(action, resource_name) {
     resource_name == ""
     allowed_empty_resource_actions := {"list", "create"}
-    action in allowed_empty_resource_actions
+    allowed_action := allowed_empty_resource_actions[_]
+    allowed_action == action
 }
