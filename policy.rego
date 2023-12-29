@@ -33,7 +33,7 @@ allow[name] {
     name := input_resource.name
 }
 
-user_permissions = [service |
+user_permissions[service] {
     data_plane := data.data_plane
     user_role := data_plane.users[input.user.id].roles[_]
 
@@ -47,4 +47,4 @@ user_permissions = [service |
     service := {
         p.service: [action | action := p.actions[_].action]
     }
-]
+}
